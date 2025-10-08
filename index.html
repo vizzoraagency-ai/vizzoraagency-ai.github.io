@@ -4,82 +4,87 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WhatsApp qrupuna qoşul</title>
-  <meta name="description" content="Vakansiya.az - İş elanları üçün WhatsApp qrupuna qoşul">
-  
+  <meta name="description" content="Vakansiya.az WhatsApp qrupuna qoşul">
   <script>
-    (function() {
-      var target = "https://chat.whatsapp.com/BNpKYIFxThjGWEYJV0EALR";
+    (function () {
+      var CODE   = "BNpKYIFxThjGWEYJV0EALR";
+      var HTTPS  = "https://chat.whatsapp.com/" + CODE;          // universal link
+      var IOS    = "whatsapp://chat?code=" + CODE;                // iOS deep-link (jest tələb edə bilər)
+      var INTENT = "intent://chat.whatsapp.com/" + CODE +
+                   "#Intent;scheme=https;package=com.whatsapp;end"; // Android intent
 
-      // Universal yönləndirmə – iPhone, Android, TikTok, Instagram, Chrome hamısı üçün
-      function redirect() {
+      function isInApp() {
+        var ua = navigator.userAgent || "";
+        return /FBAN|FBAV|Instagram|Line|Snapchat|TikTok|Twitter|Pinterest|Telegram|Electron/i.test(ua);
+      }
+      function isAndroid(){ return /Android/i.test(navigator.userAgent); }
+      function isIOS(){ return /iPhone|iPad|iPod/i.test(navigator.userAgent); }
+
+      // bir neçə üsulu ardıcıl yoxlayırıq
+      function tryRedirectChain(userGesture) {
         try {
-          if (navigator.userAgent.includes("Instagram") || navigator.userAgent.includes("TikTok")) {
-            // Sosial media daxili brauzerlər üçün yeni tab açır
-            window.open(target, "_blank");
-          } else {
-            // Normal brauzerlər üçün birbaşa yönləndirmə
-            window.location.href = target;
+          // 1) In-app brauzerlər: yeni tabda açma daha çox icazə alır
+          if (isInApp()) {
+            var w = window.open(HTTPS, "_blank");
+            if (w) return true;
           }
-        } catch (e) {
-          window.location.href = target;
+
+          // 2) Android intent (app-a məcburi keçid)
+          if (isAndroid()) {
+            window.location.href = INTENT;
+            return true;
+          }
+
+          // 3) iOS deep-link (jest olanda daha etibarlı)
+          if (isIOS() && userGesture) {
+            window.location.href = IOS;
+            return true;
+          }
+
+          // 4) Standart universal link
+          window.location.href = HTTPS;
+          return true;
+        } catch(e) {
+          try { window.location.href = HTTPS; } catch(_) {}
         }
+        return false;
       }
 
-      // 2 saniyə gecikmə ilə yönləndir
-      setTimeout(redirect, 2000);
+      // avtomatik cəhd (2 saniyə sonra)
+      setTimeout(function(){ tryRedirectChain(false); }, 2000);
+
+      // düymə klikində daha sərt ssenari
+      window.joinNow = function(){
+        // istifadəçi jesti var → iOS/intent daha çox işləyir
+        if (!tryRedirectChain(true)) {
+          // son çarə: yeni tab
+          try { window.open(HTTPS, "_blank"); } catch(_) {}
+        }
+      };
     })();
   </script>
-
   <style>
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      margin: 0;
-      padding: 40px;
-      background: #f7f7f7;
-      color: #222;
-    }
-    .card {
-      max-width: 560px;
-      margin: 10vh auto;
-      padding: 28px;
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      background: #fff;
-      text-align: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    h1 {
-      color: #111;
-      font-size: 24px;
-      margin-bottom: 10px;
-    }
-    p {
-      line-height: 1.5;
-    }
-    a.button {
-      display: inline-block;
-      padding: 14px 26px;
-      margin-top: 20px;
-      text-decoration: none;
-      border-radius: 999px;
-      border: 1px solid #25D366;
-      background: #25D366;
-      color: white;
-      font-weight: 600;
-      font-size: 16px;
-      transition: 0.3s;
-    }
-    a.button:hover {
-      background: #1DA851;
-    }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f6f7f9;color:#111}
+    .wrap{max-width:620px;margin:10vh auto;padding:28px}
+    .card{background:#fff;border:1px solid #e8e8e8;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:28px;text-align:center}
+    h1{margin:0 0 8px;font-size:24px}
+    p{margin:8px 0 0;line-height:1.5}
+    .btn{display:inline-block;margin-top:18px;padding:14px 26px;border-radius:999px;background:#25D366;color:#fff;text-decoration:none;font-weight:700;border:0;cursor:pointer}
+    .hint{margin-top:14px;font-size:13px;color:#666}
+    .hint b{color:#111}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>WhatsApp qrupuna qoşulursunuz…</h1>
-    <p>2 saniyə ərzində avtomatik yönləndiriləcəksiniz.</p>
-    <p>Əgər yönləndirmə <b>baş vermirsə</b>, aşağıdakı düyməyə klik edin:</p>
-    <p><a class="button" href="https://chat.whatsapp.com/BNpKYIFxThjGWEYJV0EALR" target="_blank">Qrupa qoşul</a></p>
+  <div class="wrap">
+    <div class="card">
+      <h1>WhatsApp qrupuna qoşulursunuz…</h1>
+      <p>2 saniyə ərzində avtomatik yönləndiriləcəksiniz.</p>
+      <p>Əgər yönləndirmə <b>baş vermirsə</b>, aşağıdakı düyməyə klik edin:</p>
+      <button class="btn" onclick="joinNow()">Qrupa qoşul</button>
+      <p class="hint">
+        TikTok/Instagram içindən açılıbsa və yenə də getmirsə: <b>… → Tarayıcıda aç</b> seçin, sonra düyməni klik edin.
+      </p>
+    </div>
   </div>
 </body>
 </html>
