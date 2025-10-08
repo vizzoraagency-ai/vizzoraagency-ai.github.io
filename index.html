@@ -4,25 +4,82 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WhatsApp qrupuna qoşul</title>
-  <meta http-equiv="refresh" content="0; url=https://chat.whatsapp.com/BNpKYIFxThjGWEYJV0EALR">
+  <meta name="description" content="Vakansiya.az - İş elanları üçün WhatsApp qrupuna qoşul">
+  
   <script>
     (function() {
       var target = "https://chat.whatsapp.com/BNpKYIFxThjGWEYJV0EALR";
-      try { window.location.replace(target); } catch(e) { window.location.href = target; }
+
+      // Universal yönləndirmə – iPhone, Android, TikTok, Instagram, Chrome hamısı üçün
+      function redirect() {
+        try {
+          if (navigator.userAgent.includes("Instagram") || navigator.userAgent.includes("TikTok")) {
+            // Sosial media daxili brauzerlər üçün yeni tab açır
+            window.open(target, "_blank");
+          } else {
+            // Normal brauzerlər üçün birbaşa yönləndirmə
+            window.location.href = target;
+          }
+        } catch (e) {
+          window.location.href = target;
+        }
+      }
+
+      // 2 saniyə gecikmə ilə yönləndir
+      setTimeout(redirect, 2000);
     })();
   </script>
+
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 40px; }
-    .card { max-width: 560px; margin: 10vh auto; padding: 28px; border: 1px solid #eee; border-radius: 12px; text-align: center; }
-    a.button { display: inline-block; padding: 14px 22px; text-decoration: none; border-radius: 999px; border: 1px solid #25D366; color: #25D366; font-weight: 600; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 40px;
+      background: #f7f7f7;
+      color: #222;
+    }
+    .card {
+      max-width: 560px;
+      margin: 10vh auto;
+      padding: 28px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      background: #fff;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    h1 {
+      color: #111;
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    p {
+      line-height: 1.5;
+    }
+    a.button {
+      display: inline-block;
+      padding: 14px 26px;
+      margin-top: 20px;
+      text-decoration: none;
+      border-radius: 999px;
+      border: 1px solid #25D366;
+      background: #25D366;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      transition: 0.3s;
+    }
+    a.button:hover {
+      background: #1DA851;
+    }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>WhatsApp qrupuna qoşulursunuz…</h1>
-    <p>1–2 saniyə ərzində avtomatik yönləndiriləcəksiniz.</p>
+    <p>2 saniyə ərzində avtomatik yönləndiriləcəksiniz.</p>
     <p>Əgər yönləndirmə <b>baş vermirsə</b>, aşağıdakı düyməyə klik edin:</p>
-    <p><a class="button" href="https://chat.whatsapp.com/BNpKYIFxThjGWEYJV0EALR">Qrupa qoşul</a></p>
+    <p><a class="button" href="https://chat.whatsapp.com/BNpKYIFxThjGWEYJV0EALR" target="_blank">Qrupa qoşul</a></p>
   </div>
 </body>
 </html>
