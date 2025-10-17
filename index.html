@@ -1,26 +1,75 @@
-<script>
-  var whatsappGroupLink = "https://chat.whatsapp.com/BNpKYIFxThjGWEYJV0EALR";
+<!doctype html>
+<html lang="az">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WhatsApp qrupuna qoşul</title>
+  <style>
+    body{margin:0;background:#f6f7f8;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    .card{max-width:640px;margin:10vh auto;padding:28px;border-radius:16px;background:#fff;
+          box-shadow:0 6px 20px rgba(0,0,0,.06);text-align:center}
+    h1{margin:0 0 16px;font-size:28px;line-height:1.25}
+    p{margin:0 0 18px;color:#333}
+    .btn{display:inline-block;padding:14px 22px;border-radius:999px;text-decoration:none;
+         background:#25D366;color:#fff;font-weight:700}
+    .hint{font-size:14px;color:#666}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>WhatsApp qrupuna qoşulursunuz…</h1>
+    <p>2 saniyə ərzində avtomatik yönləndiriləcəksiniz.</p>
+    <p class="hint">Əgər yönləndirmə baş verməsə, aşağıdakı düyməyə klik edin:</p>
+    <p><a id="manualBtn" class="btn" href="#">Qrupa qoşul</a></p>
+  </div>
 
-  function openWhatsApp() {
-    var userAgent = navigator.userAgent.toLowerCase();
-    if (userAgent.includes("android")) {
-      // Android üçün intent yönləndirmə
-      window.location.href = "intent://chat.whatsapp.com/BNpKYIFxThjGWEYJV0EALR#Intent;scheme=https;package=com.whatsapp;end";
-      // Fallback (əgər intent alınmazsa)
-      setTimeout(function() {
-        window.location.href = whatsappGroupLink;
-      }, 1500);
-    } else if (userAgent.includes("iphone") || userAgent.includes("ipad")) {
-      // iPhone üçün birbaşa yönləndirmə
-      window.location.href = whatsappGroupLink;
-    } else {
-      // Digər cihazlar üçün (məsələn PC)
-      window.location.href = whatsappGroupLink;
+  <script>
+    // --- DƏYİŞ: yalnız bu sətirdə dəvət kodunu öz kodunla əvəz et ---
+    var INVITE_CODE = "BNpKYIFxThjGWEYJV0EALR";
+    // ----------------------------------------------------------------
+
+    var CHAT_LINK   = "https://chat.whatsapp.com/" + INVITE_CODE;
+    // iOS üçün universal keçid (Business + adi WhatsApp hər ikisini dəstəkləyir)
+    var ACCEPT_LINK = "https://api.whatsapp.com/accept?code=" + INVITE_CODE;
+
+    function isAndroid(){ return /android/i.test(navigator.userAgent); }
+    function isIOS(){ return /(iphone|ipad|ipod)/i.test(navigator.userAgent); }
+
+    function openAndroid(){
+      // Paketsiz intent → sistem lazım olan WhatsApp-ı (Business/adi) özü seçir
+      location.href = "intent://chat.whatsapp.com/" + INVITE_CODE + "#Intent;scheme=https;end";
+      // Fallback
+      setTimeout(function(){ location.href = CHAT_LINK; }, 1500);
     }
-  }
 
-  // Səhifə açılarkən 1 saniyədən sonra avtomatik çalışsın
-  window.onload = function() {
-    setTimeout(openWhatsApp, 1000);
-  };
-</script>
+    function openIOS(){
+      // iOS-da əvvəlcə ACCEPT_LINK → Business və ya adi WhatsApp-ı açır
+      location.href = ACCEPT_LINK;
+      // Fallback
+      setTimeout(function(){ location.href = CHAT_LINK; }, 1500);
+    }
+
+    function openDefault(){
+      location.href = CHAT_LINK;
+    }
+
+    // Manual düymə — hər zaman ən uyğun linkə aparır
+    document.getElementById("manualBtn").addEventListener("click", function(e){
+      e.preventDefault();
+      if (isAndroid()) openAndroid();
+      else if (isIOS()) openIOS();
+      else openDefault();
+    });
+
+    // Avtomatik yönləndirmə (TikTok/IG WebView məhdudiyyətlərinə baxmayaraq)
+    window.addEventListener("load", function(){
+      setTimeout(function(){
+        if (isAndroid()) openAndroid();
+        else if (isIOS()) openIOS();
+        else openDefault();
+      }, 900);
+    });
+  </script>
+</body>
+</html>
+
