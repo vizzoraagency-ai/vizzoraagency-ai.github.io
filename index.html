@@ -27,22 +27,22 @@
 <div class="wrap">
   <div class="card">
     <h1>WhatsApp qrupuna qoşul</h1>
-    <p id="intro">Aşağıdakı düymələrdən uyğun olanı seçin.</p>
+    <p id="intro">Aşağıda avtomatik açılacaq. Açılmazsa düymələrdən birini seç.</p>
 
-    <!-- iOS üçün manual seçim -->
+    <!-- iOS üçün panel (yalnız fallback kimi görünəcək) -->
     <div id="iosPanel" class="hidden">
       <div class="row">
         <a id="btnWAB" class="btn btn-primary"  href="#">WhatsApp <b>Business</b> ilə aç</a>
         <a id="btnWA"  class="btn btn-outline" href="#">Adi WhatsApp ilə aç</a>
         <a id="btnWEB" class="btn btn-outline" href="#" rel="noopener">Brauzerdə aç (ehtiyat)</a>
       </div>
-      <p class="hint">Qeyd: iOS-da avtomatik seçim olmur, hansını istəyirsənsə seç.</p>
+      <p class="hint">Qeyd: iOS-da bəzən TikTok linkləri bloklayır. “… → Tarayıcıda aç” seçimi kömək edir.</p>
     </div>
 
     <!-- Android -->
     <div id="androidPanel" class="hidden">
       <a id="btnAND" class="btn btn-primary" href="#">Qrupa qoşul (Android)</a>
-      <p class="hint">Telefonunda olan WhatsApp tətbiqini seçəcəksən (adi/Business).</p>
+      <p class="hint">Chooser çıxacaq: Adi/Business hansını istəsən seçəcəksən.</p>
     </div>
 
     <!-- Digər platformalar -->
@@ -53,9 +53,13 @@
 </div>
 
 <script>
+  // ==== Qrup kodunu YALNIZ burada dəyiş =====
   const CODE   = "BNpKYIFxThjGWEYJV0EALR";
+  // ===========================================
+
   const ACCEPT = `https://api.whatsapp.com/accept?code=${CODE}`;
   const CHAT   = `https://chat.whatsapp.com/${CODE}`;
+  const LWA    = `https://l.whatsapp.com/accept/${CODE}`; // əlavə ehtiyat
   const DL_WA  = `whatsapp://accept?code=${CODE}`;
   const DL_WAB = `whatsapp-business://accept?code=${CODE}`;
 
@@ -68,10 +72,22 @@
     catch(_){ location.href = u; }
   }
 
-  // iOS – yalnız düymələr (avtomatik yoxdur)
-  function setupIOS(){
-    document.getElementById("iosPanel").classList.remove("hidden");
+  // --- iOS: əvvəl avtomatik cəhd, alınmazsa panel göstər ---
+  function autoIOS(){
+    // 1) Safari-də accept pəncərəsini aç (çox vaxt birbaşa dəvət çıxır)
+    let w = window.open(ACCEPT, "_blank", "noopener,noreferrer");
+    if(!w){ location.href = ACCEPT; } // popup bloklanıbsa eyni tabda
 
+    // 2) əlavə fallback-lar
+    setTimeout(()=>{ openWeb(CHAT, "_self"); }, 900);
+    setTimeout(()=>{ openWeb(LWA,  "_self"); }, 1700);
+
+    // 3) 2.4 s sonra hələ də qoşulmayıbsa – paneli göstər
+    setTimeout(()=>{ document.getElementById("iosPanel").classList.remove("hidden"); }, 2400);
+  }
+
+  // iOS düymələri (fallback)
+  function setupIOSButtons(){
     document.getElementById("btnWAB").addEventListener("click", function(e){
       e.preventDefault();
       try{
@@ -80,7 +96,7 @@
         document.body.appendChild(f);
         setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 900);
       }catch(_){}
-      setTimeout(()=>openWeb(ACCEPT, "_self"), 700);
+      setTimeout(()=>openWeb(ACCEPT, "_self"), 600);
     });
 
     document.getElementById("btnWA").addEventListener("click", function(e){
@@ -91,7 +107,7 @@
         document.body.appendChild(f);
         setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 900);
       }catch(_){}
-      setTimeout(()=>openWeb(ACCEPT, "_self"), 700);
+      setTimeout(()=>openWeb(ACCEPT, "_self"), 600);
     });
 
     document.getElementById("btnWEB").addEventListener("click", function(e){
@@ -100,7 +116,7 @@
     });
   }
 
-  // Android – chooser/intent
+  // --- Android ---
   function setupAndroid(){
     document.getElementById("androidPanel").classList.remove("hidden");
     document.getElementById("btnAND").addEventListener("click", function(e){
@@ -111,7 +127,7 @@
     });
   }
 
-  // Digər platformalar
+  // --- Digər platformalar ---
   function setupOther(){
     document.getElementById("otherPanel").classList.remove("hidden");
     document.getElementById("btnOTHER").addEventListener("click", function(e){
@@ -120,10 +136,16 @@
     });
   }
 
+  // --- Başlat ---
   (function init(){
-    if (isIOS) setupIOS();
-    else if (isAndroid) setupAndroid();
-    else setupOther();
+    if (isIOS){
+      setupIOSButtons();
+      autoIOS();               // əvvəl avtomatik, sonra panel fallback
+    } else if (isAndroid){
+      setupAndroid();
+    } else {
+      setupOther();
+    }
   })();
 </script>
 </body>
