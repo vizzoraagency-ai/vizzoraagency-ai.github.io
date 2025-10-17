@@ -19,7 +19,7 @@
   <div class="card">
     <h1>WhatsApp qrupuna qoşulursunuz…</h1>
     <p>2 saniyə ərzində avtomatik yönləndiriləcəksiniz.</p>
-    <p class="hint">Əgər yönləndirmə baş verməsə, aşağıdakı düyməyə klik edin:</p>
+    <p class="hint">Əgər yönləndirmə baş vermirsə, aşağıdakı düyməyə klik edin:</p>
     <p><a id="manualBtn" class="btn" href="#">Qrupa qoşul</a></p>
   </div>
 
@@ -28,32 +28,43 @@
     var INVITE_CODE = "BNpKYIFxThjGWEYJV0EALR";
     // ----------------------------------------------------------------
 
-    var CHAT_LINK   = "https://chat.whatsapp.com/" + INVITE_CODE;
-    // iOS üçün universal keçid (Business + adi WhatsApp hər ikisini dəstəkləyir)
-    var ACCEPT_LINK = "https://api.whatsapp.com/accept?code=" + INVITE_CODE;
+    var CHAT_LINK    = "https://chat.whatsapp.com/" + INVITE_CODE;
+    var ACCEPT_WA_ME = "https://wa.me/accept?code=" + INVITE_CODE;      // variant 1
+    var ACCEPT_API   = "https://api.whatsapp.com/accept?code=" + INVITE_CODE; // variant 2
 
     function isAndroid(){ return /android/i.test(navigator.userAgent); }
     function isIOS(){ return /(iphone|ipad|ipod)/i.test(navigator.userAgent); }
 
-    function openAndroid(){
-      // Paketsiz intent → sistem lazım olan WhatsApp-ı (Business/adi) özü seçir
-      location.href = "intent://chat.whatsapp.com/" + INVITE_CODE + "#Intent;scheme=https;end";
-      // Fallback
-      setTimeout(function(){ location.href = CHAT_LINK; }, 1500);
-    }
-
+    // iOS üçün: əvvəlcə app-ı önə gətirməyə cəhd (custom scheme), sonra ardıcıl 2 universal link
     function openIOS(){
-      // iOS-da əvvəlcə ACCEPT_LINK → Business və ya adi WhatsApp-ı açır
-      location.href = ACCEPT_LINK;
-      // Fallback
+      // 1) Tətbiqi oyat (Business və ya adi – hansısı varsa onu açır)
+      try {
+        var iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = 'whatsapp://';
+        document.body.appendChild(iframe);
+        setTimeout(function(){ document.body.removeChild(iframe); }, 1000);
+      } catch(e){}
+
+      // 2) Universal link #1 (bəzi cihazlarda Business bunu daha yaxşı tutur)
+      setTimeout(function(){ location.href = ACCEPT_WA_ME; }, 300);
+
+      // 3) Universal link #2 (başqa cihazlarda bunu tutur)
+      setTimeout(function(){ location.href = ACCEPT_API; }, 1200);
+
+      // 4) Son ehtiyat
+      setTimeout(function(){ location.href = CHAT_LINK; }, 2200);
+    }
+
+    // Android üçün: paketsiz intent → varsa hansı WA tətbiqi quraşdırılıbsa onu seçdirir/açır
+    function openAndroid(){
+      location.href = "intent://chat.whatsapp.com/" + INVITE_CODE + "#Intent;scheme=https;end";
       setTimeout(function(){ location.href = CHAT_LINK; }, 1500);
     }
 
-    function openDefault(){
-      location.href = CHAT_LINK;
-    }
+    function openDefault(){ location.href = CHAT_LINK; }
 
-    // Manual düymə — hər zaman ən uyğun linkə aparır
+    // Manual düymə
     document.getElementById("manualBtn").addEventListener("click", function(e){
       e.preventDefault();
       if (isAndroid()) openAndroid();
@@ -61,7 +72,7 @@
       else openDefault();
     });
 
-    // Avtomatik yönləndirmə (TikTok/IG WebView məhdudiyyətlərinə baxmayaraq)
+    // Avtomatik yönləndirmə
     window.addEventListener("load", function(){
       setTimeout(function(){
         if (isAndroid()) openAndroid();
