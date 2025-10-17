@@ -9,75 +9,98 @@
     .card{max-width:640px;margin:10vh auto;padding:28px;border-radius:16px;background:#fff;
           box-shadow:0 6px 20px rgba(0,0,0,.06);text-align:center}
     h1{margin:0 0 16px;font-size:28px;line-height:1.25}
-    p{margin:0 0 18px;color:#333}
-    .btn{display:inline-block;padding:14px 22px;border-radius:999px;text-decoration:none;
-         background:#25D366;color:#fff;font-weight:700}
-    .hint{font-size:14px;color:#666}
+    p{margin:0 0 16px;color:#333}
+    .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .btn{display:inline-block;padding:12px 18px;border-radius:999px;text-decoration:none;
+         background:#25D366;color:#fff;font-weight:700;border:0;cursor:pointer}
+    .btn.ghost{background:#0f62fe}
+    .hint{font-size:13px;color:#666;margin-top:10px}
   </style>
 </head>
 <body>
   <div class="card">
     <h1>WhatsApp qrupuna qoşulursunuz…</h1>
     <p>2 saniyə ərzində avtomatik yönləndiriləcəksiniz.</p>
-    <p class="hint">Əgər yönləndirmə baş vermirsə, aşağıdakı düyməyə klik edin:</p>
-    <p><a id="manualBtn" class="btn" href="#">Qrupa qoşul</a></p>
+    <div class="row">
+      <button id="joinBtn" class="btn">Qrupa qoşul</button>
+      <button id="iosBizBtn" class="btn ghost" style="display:none;">iPhone: Business ilə aç (Safari)</button>
+    </div>
+    <p class="hint" id="tip" style="display:none;">iPhone TikTok/Instagram içindənsə, bu düymə Safari açacaq və WhatsApp Business-a keçirəcək.</p>
   </div>
 
   <script>
-    // --- DƏYİŞ: yalnız bu sətirdə dəvət kodunu öz kodunla əvəz et ---
+    // Dəvət kodun
     var INVITE_CODE = "BNpKYIFxThjGWEYJV0EALR";
-    // ----------------------------------------------------------------
 
-    var CHAT_LINK    = "https://chat.whatsapp.com/" + INVITE_CODE;
-    var ACCEPT_WA_ME = "https://wa.me/accept?code=" + INVITE_CODE;      // variant 1
-    var ACCEPT_API   = "https://api.whatsapp.com/accept?code=" + INVITE_CODE; // variant 2
+    // Linklər
+    var CHAT_LINK    = "https://chat.whatsapp.com/" + INVITE_CODE;            // rəsmi qrup dəvəti
+    var ACCEPT_WA_ME = "https://wa.me/accept?code=" + INVITE_CODE;            // accept variant 1
+    var ACCEPT_API   = "https://api.whatsapp.com/accept?code=" + INVITE_CODE; // accept variant 2
 
-    function isAndroid(){ return /android/i.test(navigator.userAgent); }
-    function isIOS(){ return /(iphone|ipad|ipod)/i.test(navigator.userAgent); }
+    // Platforma detektoru
+    var UA = navigator.userAgent || "";
+    function isAndroid(){ return /Android/i.test(UA); }
+    function isIOS(){ return /(iPhone|iPad|iPod)/i.test(UA); }
+    function isInApp(){ return /(TikTok|FBAN|FBAV|Instagram)/i.test(UA); }
 
-    // iOS üçün: əvvəlcə app-ı önə gətirməyə cəhd (custom scheme), sonra ardıcıl 2 universal link
-    function openIOS(){
-      // 1) Tətbiqi oyat (Business və ya adi – hansısı varsa onu açır)
-      try {
-        var iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = 'whatsapp://';
-        document.body.appendChild(iframe);
-        setTimeout(function(){ document.body.removeChild(iframe); }, 1000);
-      } catch(e){}
-
-      // 2) Universal link #1 (bəzi cihazlarda Business bunu daha yaxşı tutur)
-      setTimeout(function(){ location.href = ACCEPT_WA_ME; }, 300);
-
-      // 3) Universal link #2 (başqa cihazlarda bunu tutur)
-      setTimeout(function(){ location.href = ACCEPT_API; }, 1200);
-
-      // 4) Son ehtiyat
-      setTimeout(function(){ location.href = CHAT_LINK; }, 2200);
-    }
-
-    // Android üçün: paketsiz intent → varsa hansı WA tətbiqi quraşdırılıbsa onu seçdirir/açır
+    // --- ANDROID ---
+    // Paketsiz intent → sistemdə hansı WhatsApp varsa onu seçdirir/açır; alınmasa https fallback
     function openAndroid(){
-      location.href = "intent://chat.whatsapp.com/" + INVITE_CODE + "#Intent;scheme=https;end";
-      setTimeout(function(){ location.href = CHAT_LINK; }, 1500);
+      try {
+        location.href = "intent://chat.whatsapp.com/" + INVITE_CODE + "#Intent;scheme=https;end";
+        setTimeout(function(){
+          // WebView intent-i uda bilər; _blank çox vaxt Chrome-u açır
+          var w = window.open(CHAT_LINK, "_blank", "noopener");
+          if(!w){ location.href = CHAT_LINK; }
+        }, 700);
+      } catch(e){ location.href = CHAT_LINK; }
     }
 
-    function openDefault(){ location.href = CHAT_LINK; }
+    // --- iOS ---
+    // 1) App-ı oyat (scheme) 2) wa.me/accept 3) api.accept 4) chat.whatsapp.com
+    function wakeIOSApp(){
+      try{
+        var f = document.createElement("iframe");
+        f.style.display="none";
+        f.src = "whatsapp://";
+        document.body.appendChild(f);
+        setTimeout(function(){ try{ document.body.removeChild(f); }catch(_){ } }, 900);
+      }catch(_){}
+    }
+    function openIOS(){
+      wakeIOSApp();                        // 1) Business/adi hansıdırsa oyat
+      setTimeout(function(){ location.href = ACCEPT_WA_ME; }, 300);   // 2)
+      setTimeout(function(){ location.href = ACCEPT_API;   }, 1200);  // 3)
+      setTimeout(function(){ location.href = CHAT_LINK;    }, 2200);  // 4)
+    }
 
-    // Manual düymə
-    document.getElementById("manualBtn").addEventListener("click", function(e){
+    // Manual düymələr
+    document.getElementById("joinBtn").addEventListener("click", function(e){
       e.preventDefault();
       if (isAndroid()) openAndroid();
       else if (isIOS()) openIOS();
-      else openDefault();
+      else location.href = CHAT_LINK;
     });
 
-    // Avtomatik yönləndirmə
+    // iOS Business üçün Safari ilə _blank aç – webview-dan çıxmağa məcbur edir
+    var iosBizBtn = document.getElementById("iosBizBtn");
+    iosBizBtn.addEventListener("click", function(e){
+      e.preventDefault();
+      var w = window.open(ACCEPT_API, "_blank"); // Business/adi hansıdırsa onu açır
+      if(!w){ location.href = ACCEPT_API; }      // pop-up bloklanarsa eyni tab
+    });
+
+    // UI: iOS + in-app olduqda əlavə düyməni göstər (çünki webview çox sərt olur)
     window.addEventListener("load", function(){
+      if (isIOS() && isInApp()){
+        iosBizBtn.style.display = "inline-block";
+        document.getElementById("tip").style.display = "block";
+      }
+      // Avtomatik cəhd (hamıda)
       setTimeout(function(){
         if (isAndroid()) openAndroid();
         else if (isIOS()) openIOS();
-        else openDefault();
+        else location.href = CHAT_LINK;
       }, 900);
     });
   </script>
