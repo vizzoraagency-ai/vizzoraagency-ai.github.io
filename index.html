@@ -20,62 +20,121 @@
   .btn-primary{background:var(--green);color:#fff}
   .btn-outline{background:#eef3ee;color:#0b0b0b}
   .hint{font-size:14px;color:#666;margin-top:8px}
+  .hidden{display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
     <h1>WhatsApp qrupuna qoşul</h1>
-    <p>Aşağıdakı düymələrdən birini seçin. iPhone-da ən etibarlı yol: <b>Brauzerdə aç</b> və ya telefonunda olan tətbiqə uyğun <b>WhatsApp/Business ilə aç</b>.</p>
+    <p id="intro">Aşağıdakı düymələrdən uyğun olanı seçin.</p>
 
-    <div class="row">
-      <a id="openWA"  class="btn btn-primary"  href="#">WhatsApp ilə aç</a>
-      <a id="openWAB" class="btn btn-outline" href="#">WhatsApp Business ilə aç</a>
-      <a id="openWeb" class="btn btn-outline" href="#" rel="noopener">Brauzerdə aç (backup)</a>
+    <!-- iOS üçün manual seçim paneli (AVTOMAT YOXDUR) -->
+    <div id="iosPanel" class="hidden">
+      <div class="row">
+        <a id="btnWAB" class="btn btn-primary"  href="#">WhatsApp <b>Business</b> ilə aç</a>
+        <a id="btnWA"  class="btn btn-outline" href="#">Adi WhatsApp ilə aç</a>
+        <a id="btnWEB" class="btn btn-outline" href="#" rel="noopener">Brauzerdə aç (backup)</a>
+      </div>
+      <p class="hint">Qeyd: iOS-da avtomatik seçim olmur. Hansı tətbiqlə açmaq istədiyini buradan seç.</p>
     </div>
 
-    <p class="hint">Brauzerdə aç seçəndə dəvət pəncərəsi (Join Group) ən stabil çıxır.</p>
+    <!-- Android üçün bir düymə (avto/chooser işə düşür) -->
+    <div id="androidPanel" class="hidden">
+      <a id="btnAND" class="btn btn-primary" href="#">Qrupa qoşul (Android)</a>
+      <p class="hint">Telefonunda hansı WhatsApp varsa (adi/Business) onu seçəcəksən.</p>
+    </div>
+
+    <!-- Digər platformalara sadə link -->
+    <div id="otherPanel" class="hidden">
+      <a id="btnOTHER" class="btn btn-primary" href="#">Qrupa qoşul</a>
+    </div>
   </div>
 </div>
 
 <script>
-  // ==== Dəvət kodun ====
+  // === Dəvət kodu ===
   const CODE   = "BNpKYIFxThjGWEYJV0EALR";
   const ACCEPT = `https://api.whatsapp.com/accept?code=${CODE}`;
+  const CHAT   = `https://chat.whatsapp.com/${CODE}`;
 
-  // Deep-link sxemləri (yalnız istifadəçi klikində çalışdırın)
+  // Deep-linklər – YALNIZ KLIK İLƏ İŞƏ SAL!
   const DL_WA  = `whatsapp://accept?code=${CODE}`;
   const DL_WAB = `whatsapp-business://accept?code=${CODE}`;
 
-  // Köməkçi: iframe ilə sxemi oyat (iOS üçün sabit nümunə)
-  function openScheme(url){
-    try{
-      const f=document.createElement("iframe");
-      f.style.display="none"; f.src=url;
-      document.body.appendChild(f);
-      setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 900);
-    }catch(_){}
+  const UA = navigator.userAgent || navigator.vendor || window.opera;
+  const isAndroid = /Android/i.test(UA);
+  const isIOS     = /iPhone|iPad|iPod/i.test(UA);
+
+  function openWeb(u, target){
+    try{ window.open(u, target || "_blank", "noopener,noreferrer"); }
+    catch(_){ location.href = u; }
   }
-  function openWeb(u){ try{ window.open(u, "_blank", "noopener,noreferrer"); } catch(_){ location.href=u; } }
 
-  // Klik eventləri
-  document.getElementById("openWA").addEventListener("click", function(e){
-    e.preventDefault();
-    openScheme(DL_WA);
-    // 700 ms sonra ehtiyat üçün accept linkini də aç
-    setTimeout(()=>openWeb(ACCEPT), 700);
-  });
+  // iOS – HEÇ BİR AVTOMAT YOXDUR: yalnız düymələr
+  function setupIOS(){
+    document.getElementById("iosPanel").classList.remove("hidden");
 
-  document.getElementById("openWAB").addEventListener("click", function(e){
-    e.preventDefault();
-    openScheme(DL_WAB);
-    setTimeout(()=>openWeb(ACCEPT), 700);
-  });
+    // Business ilə aç
+    document.getElementById("btnWAB").addEventListener("click", function(e){
+      e.preventDefault();
+      // 1) Business deep-link
+      try{
+        const f=document.createElement("iframe");
+        f.style.display="none"; f.src = DL_WAB;
+        document.body.appendChild(f);
+        setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 900);
+      }catch(_){}
+      // 2) 700ms sonra accept (brauzer) – dəvət pəncərəsini gətirir
+      setTimeout(()=>openWeb(ACCEPT, "_self"), 700);
+    });
 
-  document.getElementById("openWeb").addEventListener("click", function(e){
-    e.preventDefault();
-    openWeb(ACCEPT);
-  });
+    // Adi WhatsApp ilə aç
+    document.getElementById("btnWA").addEventListener("click", function(e){
+      e.preventDefault();
+      try{
+        const f=document.createElement("iframe");
+        f.style.display="none"; f.src = DL_WA;
+        document.body.appendChild(f);
+        setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 900);
+      }catch(_){}
+      setTimeout(()=>openWeb(ACCEPT, "_self"), 700);
+    });
+
+    // Brauzerdə aç (ən stabil ehtiyat)
+    document.getElementById("btnWEB").addEventListener("click", function(e){
+      e.preventDefault();
+      openWeb(ACCEPT, "_self");
+    });
+  }
+
+  // Android – chooser/intent
+  function setupAndroid(){
+    document.getElementById("androidPanel").classList.remove("hidden");
+    document.getElementById("btnAND").addEventListener("click", function(e){
+      e.preventDefault();
+      // chooser çıxsın deyə paket yazmırıq
+      location.href = `intent://chat.whatsapp.com/${CODE}#Intent;scheme=https;end`;
+      setTimeout(()=>{ location.href = ACCEPT; }, 800);
+      setTimeout(()=>{ location.href = CHAT;   }, 1600);
+    });
+  }
+
+  // Digər platformalar
+  function setupOther(){
+    document.getElementById("otherPanel").classList.remove("hidden");
+    document.getElementById("btnOTHER").addEventListener("click", function(e){
+      e.preventDefault();
+      openWeb(CHAT, "_self");
+    });
+  }
+
+  // Başlat – iOS üçün AVTOMAT YOX!
+  (function init(){
+    if (isIOS)      setupIOS();
+    else if (isAndroid) setupAndroid();
+    else            setupOther();
+  })();
 </script>
 </body>
 </html>
