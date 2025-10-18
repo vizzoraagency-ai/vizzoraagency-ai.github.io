@@ -35,7 +35,7 @@
         <a id="btnIOS_WAB" class="btn btn-primary"  href="#">WhatsApp <b>Business</b> ilə aç</a>
         <a id="btnIOS_WA"  class="btn btn-outline" href="#">Adi WhatsApp ilə aç</a>
       </div>
-      <p class="hint">Qeyd: TikTok/Instagram içindən açılsa da işləyəcək. Alınmasa linki yenidən açıb düyməni basın.</p>
+      <p class="hint">Qeyd: iOS bəzən default tətbiqi seçir. Bu düymələrdə sərt fallback aktivdir.</p>
     </div>
 
     <!-- Android -->
@@ -53,7 +53,7 @@
 
 <script>
   /* ==== DƏVƏT KODU ==== */
-  const CODE = "BNpKYIFxThjGWEYJV0EALR";
+  const CODE = "BNpKYIFxThjGWEYJV0EALR";  // lazım olsa yalnız bunu dəyiş
 
   /* ==== Linklər ==== */
   const CHAT   = `https://chat.whatsapp.com/${CODE}`;        // universal qrup linki
@@ -70,34 +70,67 @@
     catch(_) { location.href = u; }
   }
 
-  /* ==== iOS: yalnız iki düymə (intelligent fallback-lı) ==== */
+  /* ==== iOS: Business yalnız Business-a; Adi → ağıllı fallback ==== */
   function setupIOS(){
     document.getElementById("iosPanel").classList.remove("hidden");
 
-    // Business – əvvəl universal linki yeni tabda aç, sonra deep-link, sonda ehtiyat
+    // --- WhatsApp Business: yalnız business deep-link ---
     document.getElementById("btnIOS_WAB").addEventListener("click", function(e){
       e.preventDefault();
-      openNew(CHAT);
-      setTimeout(function(){ location.href = DL_WAB; }, 600);
-      setTimeout(function(){ location.href = CHAT;   }, 1500);
+
+      // 1) birbaşa Business deep-link (user-gesture içində)
+      location.replace(DL_WAB);
+
+      // 2) əlavə “oyatma” – iframe trik (bəzi iOS versiyalarında daha stabil)
+      setTimeout(function(){
+        try{
+          const f=document.createElement("iframe");
+          f.style.display="none";
+          f.src = DL_WAB;
+          document.body.appendChild(f);
+          setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 800);
+        }catch(_){}
+      }, 300);
+
+      // 3) hələ də bu səhifədəsənsə – son ehtiyat: universal link
+      setTimeout(function(){
+        if (document.hidden === false) {
+          location.href = CHAT;
+        }
+      }, 1600);
     });
 
-    // Adi WhatsApp – intelligent fallback:
-    // Adi WA cavab verməzsə 0.8s sonra Business-a keç, sonda universal link
+    // --- Adi WhatsApp: əvvəl Adi; alınmasa Business; sonda universal ---
     document.getElementById("btnIOS_WA").addEventListener("click", function(e){
       e.preventDefault();
-      openNew(CHAT);             // webview-dan çıxmağa kömək edir
-      location.href = DL_WA;     // 1) Adi WhatsApp cəhdi
 
-      setTimeout(function(){     // 2) 800 ms içində cavab yoxdursa Business-ə keç
-        if (document.hidden === false) { // hələ bu səhifə aktivdirsə, deməli açılmayıb
+      // 1) birbaşa Adi deep-link
+      location.replace(DL_WA);
+
+      // 2) “oyatma” – iframe ilə ikinci cəhd
+      setTimeout(function(){
+        try{
+          const f=document.createElement("iframe");
+          f.style.display="none";
+          f.src = DL_WA;
+          document.body.appendChild(f);
+          setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 800);
+        }catch(_){}
+      }, 300);
+
+      // 3) 900 ms içində hələ bu səhifədəsənsə → Business-a keç
+      setTimeout(function(){
+        if (document.hidden === false) {
           location.href = DL_WAB;
         }
-      }, 800);
+      }, 900);
 
-      setTimeout(function(){     // 3) ehtiyat – universal link
-        location.href = CHAT;
-      }, 1600);
+      // 4) son ehtiyat – universal link
+      setTimeout(function(){
+        if (document.hidden === false) {
+          location.href = CHAT;
+        }
+      }, 1800);
     });
   }
 
@@ -106,7 +139,7 @@
     document.getElementById("androidPanel").classList.remove("hidden");
     document.getElementById("btnAND").addEventListener("click", function(e){
       e.preventDefault();
-      // chooser üçün paket yazmırıq
+      // chooser üçün paket yazmırıq – sistem seçim göstərsin
       location.href = `intent://chat.whatsapp.com/${CODE}#Intent;scheme=https;end`;
       setTimeout(()=>{ location.href = CHAT; }, 800);
     });
