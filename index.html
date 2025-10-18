@@ -1,152 +1,108 @@
 <!doctype html>
 <html lang="az">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WhatsApp qrupuna qoşul</title>
-<meta name="format-detection" content="telephone=no">
-<style>
-  :root { --green:#25D366; --text:#111; }
-  html,body{margin:0;padding:0;background:#f6f7f8;color:var(--text);
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-  .wrap{min-height:100svh;display:grid;place-items:center;padding:24px}
-  .card{max-width:640px;width:100%;background:#fff;border-radius:16px;
-    box-shadow:0 6px 24px rgba(0,0,0,.06);padding:28px 24px;text-align:center}
-  h1{margin:.2rem 0 1rem;font-size:clamp(22px,4.5vw,30px)}
-  p{margin:.6rem 0 .9rem;line-height:1.6}
-  .row{display:flex;gap:12px;flex-direction:column;align-items:center}
-  .btn{display:inline-block;border:0;border-radius:12px;padding:14px 22px;
-    font-weight:700;text-decoration:none;font-size:18px;width:100%;max-width:420px}
-  .btn-primary{background:var(--green);color:#fff}
-  .btn-outline{background:#eef3ee;color:#0b0b0b}
-  .hint{font-size:14px;color:#666;margin-top:8px}
-  .hidden{display:none}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WhatsApp qrupuna qoşul</title>
+  <style>
+    body{margin:0;background:#f6f7f8;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    .card{max-width:640px;margin:10vh auto;padding:28px;border-radius:16px;background:#fff;
+          box-shadow:0 6px 20px rgba(0,0,0,.06);text-align:center}
+    h1{margin:0 0 16px;font-size:28px;line-height:1.25}
+    p{margin:0 0 16px;color:#333}
+    .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .btn{display:inline-block;padding:12px 18px;border-radius:999px;text-decoration:none;
+         background:#25D366;color:#fff;font-weight:700;border:0;cursor:pointer}
+    .btn.ghost{background:#0f62fe}
+    .hint{font-size:13px;color:#666;margin-top:10px}
+  </style>
 </head>
 <body>
-<div class="wrap">
   <div class="card">
-    <h1>WhatsApp qrupuna qoşul</h1>
-    <p id="intro">Aşağıda avtomatik açılacaq. Açılmazsa düymələrdən birini seç.</p>
-
-    <!-- iOS üçün panel (yalnız fallback kimi görünəcək) -->
-    <div id="iosPanel" class="hidden">
-      <div class="row">
-        <a id="btnWAB" class="btn btn-primary"  href="#">WhatsApp <b>Business</b> ilə aç</a>
-        <a id="btnWA"  class="btn btn-outline" href="#">Adi WhatsApp ilə aç</a>
-        <a id="btnWEB" class="btn btn-outline" href="#" rel="noopener">Brauzerdə aç (ehtiyat)</a>
-      </div>
-      <p class="hint">Qeyd: iOS-da bəzən TikTok linkləri bloklayır. “… → Tarayıcıda aç” seçimi kömək edir.</p>
+    <h1>WhatsApp qrupuna qoşulursunuz…</h1>
+    <p>2 saniyə ərzində avtomatik yönləndiriləcəksiniz.</p>
+    <div class="row">
+      <button id="joinBtn" class="btn">Qrupa qoşul</button>
+      <button id="iosBizBtn" class="btn ghost" style="display:none;">iPhone: Business ilə aç (Safari)</button>
     </div>
-
-    <!-- Android -->
-    <div id="androidPanel" class="hidden">
-      <a id="btnAND" class="btn btn-primary" href="#">Qrupa qoşul (Android)</a>
-      <p class="hint">Chooser çıxacaq: Adi/Business hansını istəsən seçəcəksən.</p>
-    </div>
-
-    <!-- Digər platformalar -->
-    <div id="otherPanel" class="hidden">
-      <a id="btnOTHER" class="btn btn-primary" href="#">Qrupa qoşul</a>
-    </div>
+    <p class="hint" id="tip" style="display:none;">iPhone TikTok/Instagram içindənsə, bu düymə Safari açacaq və WhatsApp Business-a keçirəcək.</p>
   </div>
-</div>
 
-<script>
-  // ==== Qrup kodunu YALNIZ burada dəyiş =====
-  const CODE   = "BNpKYIFxThjGWEYJV0EALR";
-  // ===========================================
+  <script>
+    // Dəvət kodun
+    var INVITE_CODE = "BNpKYIFxThjGWEYJV0EALR";
 
-  const ACCEPT = `https://api.whatsapp.com/accept?code=${CODE}`;
-  const CHAT   = `https://chat.whatsapp.com/${CODE}`;
-  const LWA    = `https://l.whatsapp.com/accept/${CODE}`; // əlavə ehtiyat
-  const DL_WA  = `whatsapp://accept?code=${CODE}`;
-  const DL_WAB = `whatsapp-business://accept?code=${CODE}`;
+    // Linklər
+    var CHAT_LINK    = "https://chat.whatsapp.com/" + INVITE_CODE;            // rəsmi qrup dəvəti
+    var ACCEPT_WA_ME = "https://wa.me/accept?code=" + INVITE_CODE;            // accept variant 1
+    var ACCEPT_API   = "https://api.whatsapp.com/accept?code=" + INVITE_CODE; // accept variant 2
 
-  const UA = navigator.userAgent || navigator.vendor || window.opera;
-  const isAndroid = /Android/i.test(UA);
-  const isIOS     = /iPhone|iPad|iPod/i.test(UA);
+    // Platforma detektoru
+    var UA = navigator.userAgent || "";
+    function isAndroid(){ return /Android/i.test(UA); }
+    function isIOS(){ return /(iPhone|iPad|iPod)/i.test(UA); }
+    function isInApp(){ return /(TikTok|FBAN|FBAV|Instagram)/i.test(UA); }
 
-  function openWeb(u, target){
-    try{ window.open(u, target || "_blank", "noopener,noreferrer"); }
-    catch(_){ location.href = u; }
-  }
-
-  // --- iOS: əvvəl avtomatik cəhd, alınmazsa panel göstər ---
-  function autoIOS(){
-    // 1) Safari-də accept pəncərəsini aç (çox vaxt birbaşa dəvət çıxır)
-    let w = window.open(ACCEPT, "_blank", "noopener,noreferrer");
-    if(!w){ location.href = ACCEPT; } // popup bloklanıbsa eyni tabda
-
-    // 2) əlavə fallback-lar
-    setTimeout(()=>{ openWeb(CHAT, "_self"); }, 900);
-    setTimeout(()=>{ openWeb(LWA,  "_self"); }, 1700);
-
-    // 3) 2.4 s sonra hələ də qoşulmayıbsa – paneli göstər
-    setTimeout(()=>{ document.getElementById("iosPanel").classList.remove("hidden"); }, 2400);
-  }
-
-  // iOS düymələri (fallback)
-  function setupIOSButtons(){
-    document.getElementById("btnWAB").addEventListener("click", function(e){
-      e.preventDefault();
-      try{
-        const f=document.createElement("iframe");
-        f.style.display="none"; f.src = DL_WAB;
-        document.body.appendChild(f);
-        setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 900);
-      }catch(_){}
-      setTimeout(()=>openWeb(ACCEPT, "_self"), 600);
-    });
-
-    document.getElementById("btnWA").addEventListener("click", function(e){
-      e.preventDefault();
-      try{
-        const f=document.createElement("iframe");
-        f.style.display="none"; f.src = DL_WA;
-        document.body.appendChild(f);
-        setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 900);
-      }catch(_){}
-      setTimeout(()=>openWeb(ACCEPT, "_self"), 600);
-    });
-
-    document.getElementById("btnWEB").addEventListener("click", function(e){
-      e.preventDefault();
-      openWeb(ACCEPT, "_self");
-    });
-  }
-
-  // --- Android ---
-  function setupAndroid(){
-    document.getElementById("androidPanel").classList.remove("hidden");
-    document.getElementById("btnAND").addEventListener("click", function(e){
-      e.preventDefault();
-      location.href = `intent://chat.whatsapp.com/${CODE}#Intent;scheme=https;end`;
-      setTimeout(()=>{ location.href = ACCEPT; }, 800);
-      setTimeout(()=>{ location.href = CHAT;   }, 1600);
-    });
-  }
-
-  // --- Digər platformalar ---
-  function setupOther(){
-    document.getElementById("otherPanel").classList.remove("hidden");
-    document.getElementById("btnOTHER").addEventListener("click", function(e){
-      e.preventDefault();
-      openWeb(CHAT, "_self");
-    });
-  }
-
-  // --- Başlat ---
-  (function init(){
-    if (isIOS){
-      setupIOSButtons();
-      autoIOS();               // əvvəl avtomatik, sonra panel fallback
-    } else if (isAndroid){
-      setupAndroid();
-    } else {
-      setupOther();
+    // --- ANDROID ---
+    // Paketsiz intent → sistemdə hansı WhatsApp varsa onu seçdirir/açır; alınmasa https fallback
+    function openAndroid(){
+      try {
+        location.href = "intent://chat.whatsapp.com/" + INVITE_CODE + "#Intent;scheme=https;end";
+        setTimeout(function(){
+          // WebView intent-i uda bilər; _blank çox vaxt Chrome-u açır
+          var w = window.open(CHAT_LINK, "_blank", "noopener");
+          if(!w){ location.href = CHAT_LINK; }
+        }, 700);
+      } catch(e){ location.href = CHAT_LINK; }
     }
-  })();
-</script>
+
+    // --- iOS ---
+    // 1) App-ı oyat (scheme) 2) wa.me/accept 3) api.accept 4) chat.whatsapp.com
+    function wakeIOSApp(){
+      try{
+        var f = document.createElement("iframe");
+        f.style.display="none";
+        f.src = "whatsapp://";
+        document.body.appendChild(f);
+        setTimeout(function(){ try{ document.body.removeChild(f); }catch(_){ } }, 900);
+      }catch(_){}
+    }
+    function openIOS(){
+      wakeIOSApp();                        // 1) Business/adi hansıdırsa oyat
+      setTimeout(function(){ location.href = ACCEPT_WA_ME; }, 300);   // 2)
+      setTimeout(function(){ location.href = ACCEPT_API;   }, 1200);  // 3)
+      setTimeout(function(){ location.href = CHAT_LINK;    }, 2200);  // 4)
+    }
+
+    // Manual düymələr
+    document.getElementById("joinBtn").addEventListener("click", function(e){
+      e.preventDefault();
+      if (isAndroid()) openAndroid();
+      else if (isIOS()) openIOS();
+      else location.href = CHAT_LINK;
+    });
+
+    // iOS Business üçün Safari ilə _blank aç – webview-dan çıxmağa məcbur edir
+    var iosBizBtn = document.getElementById("iosBizBtn");
+    iosBizBtn.addEventListener("click", function(e){
+      e.preventDefault();
+      var w = window.open(ACCEPT_API, "_blank"); // Business/adi hansıdırsa onu açır
+      if(!w){ location.href = ACCEPT_API; }      // pop-up bloklanarsa eyni tab
+    });
+
+    // UI: iOS + in-app olduqda əlavə düyməni göstər (çünki webview çox sərt olur)
+    window.addEventListener("load", function(){
+      if (isIOS() && isInApp()){
+        iosBizBtn.style.display = "inline-block";
+        document.getElementById("tip").style.display = "block";
+      }
+      // Avtomatik cəhd (hamıda)
+      setTimeout(function(){
+        if (isAndroid()) openAndroid();
+        else if (isIOS()) openIOS();
+        else location.href = CHAT_LINK;
+      }, 900);
+    });
+  </script>
 </body>
 </html>
