@@ -16,7 +16,7 @@
   p{margin:.6rem 0 .9rem;line-height:1.6}
   .row{display:flex;gap:12px;flex-direction:column;align-items:center}
   .btn{display:inline-block;border:0;border-radius:12px;padding:14px 22px;
-    font-weight:700;text-decoration:none;font-size:18px;width:100%;max-width:420px}
+    font-weight:700;text-decoration:none;font-size:18px;width:100%;max-width:420px;cursor:pointer}
   .btn-primary{background:var(--green);color:#fff}
   .btn-outline{background:#eef3ee;color:#0b0b0b}
   .hint{font-size:14px;color:#666;margin-top:8px}
@@ -27,21 +27,22 @@
 <div class="wrap">
   <div class="card">
     <h1>WhatsApp qrupuna qoşul</h1>
-    <p id="intro">Aşağıdakı düymələrdən uyğun olanı seç.</p>
+    <p id="intro">Aşağıdakı düymələrdən uyğun olanı seçin.</p>
 
-    <!-- iOS üçün iki seçim (AVTOMAT YOXDUR) -->
+    <!-- iOS: 3 düymə -->
     <div id="iosPanel" class="hidden">
       <div class="row">
-        <a id="btnWAB" class="btn btn-primary"  href="#">WhatsApp <b>Business</b> ilə aç</a>
-        <a id="btnWA"  class="btn btn-outline" href="#">Adi WhatsApp ilə aç</a>
+        <a id="btnIOS_SAFARI" class="btn btn-primary"  href="#">Safari-də aç (tövsiyə)</a>
+        <a id="btnIOS_WAB"    class="btn btn-outline" href="#">WhatsApp <b>Business</b> ilə aç</a>
+        <a id="btnIOS_WA"     class="btn btn-outline" href="#">Adi WhatsApp ilə aç</a>
       </div>
-      <p class="hint">Qeyd: iOS seçim pəncərəsi göstərmir — hansını istəyirsənsə özün seç.</p>
+      <p class="hint">Qeyd: TikTok/Instagram içindən gəlmisinizsə, əvvəlcə “Safari-də aç” düyməsinə basın.</p>
     </div>
 
-    <!-- Android üçün bir düymə (chooser özü çıxır) -->
+    <!-- Android: 1 düymə (chooser/intent) -->
     <div id="androidPanel" class="hidden">
       <a id="btnAND" class="btn btn-primary" href="#">Qrupa qoşul (Android)</a>
-      <p class="hint">Android sistem özü uyğun tətbiqi seçdirir.</p>
+      <p class="hint">Telefonunda hansı WhatsApp varsa (Adi/Business) onu seçəcəksən.</p>
     </div>
 
     <!-- Digər platformalar -->
@@ -52,85 +53,90 @@
 </div>
 
 <script>
-  // === DƏVƏT KODU ===
-  const CODE = "BNpKYIFxThjGWEYJV0EALR";               // <— qrup kodun
-  const CHAT = `https://chat.whatsapp.com/${CODE}`;    // universal invite link (stabil)
+  /* ======= DƏVƏT KODUNU BURADA DƏYİŞDİR ======= */
+  const CODE = "BNpKYIFxThjGWEYJV0EALR";
 
-  // Deep-linklər — yalnız kliklə işə sal (iOS/Android fərqli davrana bilər)
-  const DL_WA  = "whatsapp://";                        // adi WhatsApp-ı oyat
-  const DL_WAB = "whatsapp-business://";               // Business-i oyat
+  /* ======= LINKLƏR ======= */
+  const CHAT   = `https://chat.whatsapp.com/${CODE}`;              // universal link (tövsiyə iOS Safari)
+  const ACCEPT = `https://wa.me/accept/${CODE}`;                    // alternativ qəbul linki
+  const DL_WA  = `whatsapp://accept?code=${CODE}`;                  // Adi WhatsApp deep-link
+  const DL_WAB = `whatsapp-business://accept?code=${CODE}`;         // Business deep-link
 
+  /* ======= DETEKTORLAR ======= */
   const UA = navigator.userAgent || navigator.vendor || window.opera;
   const isAndroid = /Android/i.test(UA);
   const isIOS     = /iPhone|iPad|iPod/i.test(UA);
 
-  function fallbackToChat(sameTab=true){
-    if (sameTab) location.href = CHAT;
-    else try{ window.open(CHAT, "_blank", "noopener,noreferrer"); }catch(_){ location.href = CHAT; }
+  // TikTok/IG in-app?
+  function isInApp(){
+    const l = UA.toLowerCase();
+    return l.includes("tiktok") || l.includes("instagram") || l.includes("fbav") || l.includes("fb_iab");
   }
 
-  // iOS — iki düymə, heç bir avtomatik yönləndirmə yoxdur
+  function openNew(u){
+    try{ window.open(u, "_blank", "noopener,noreferrer"); }
+    catch(_){ location.href = u; }
+  }
+
+  /* ======= iOS PANELİ ======= */
   function setupIOS(){
-    iosPanel.classList.remove("hidden");
+    document.getElementById("iosPanel").classList.remove("hidden");
 
-    // Business ilə aç: əvvəl app-ı oyat, alınmasa universal link
-    btnWAB.addEventListener("click", function(e){
+    // 1) Safari-də aç — universal link (ən stabil yol)
+    document.getElementById("btnIOS_SAFARI").addEventListener("click", function(e){
       e.preventDefault();
-      try{
-        const f=document.createElement("iframe");
-        f.style.display="none"; f.src = DL_WAB;
-        document.body.appendChild(f);
-        setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 700);
-      }catch(_){}
-      setTimeout(()=>fallbackToChat(true), 600);
+      // in-app-dan çıxmaq üçün yeni tabda açırıq
+      openNew(CHAT);
     });
 
-    // Adi WhatsApp ilə aç
-    btnWA.addEventListener("click", function(e){
+    // 2) Business ilə aç — yalnız Safari içində işləyir
+    document.getElementById("btnIOS_WAB").addEventListener("click", function(e){
       e.preventDefault();
-      try{
-        const f=document.createElement("iframe");
-        f.style.display="none"; f.src = DL_WA;
-        document.body.appendChild(f);
-        setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 700);
-      }catch(_){}
-      setTimeout(()=>fallbackToChat(true), 600);
+      // əvvəlcə universal linki yeni tabda açıb Safari-yə keçməsinə kömək edirik
+      if (isInApp()) openNew(CHAT);
+      // 700 ms sonra deep-linkə cəhd (Safari-dəsinizsə “Aç” pəncərəsi çıxacaq)
+      setTimeout(function(){ location.href = DL_WAB; }, 700);
+      // sonda ehtiyat: qəbul səhifəsi
+      setTimeout(function(){ location.href = ACCEPT; }, 1600);
+    });
+
+    // 3) Adi WhatsApp ilə aç — eyni məntiq
+    document.getElementById("btnIOS_WA").addEventListener("click", function(e){
+      e.preventDefault();
+      if (isInApp()) openNew(CHAT);
+      setTimeout(function(){ location.href = DL_WA; }, 700);
+      setTimeout(function(){ location.href = ACCEPT; }, 1600);
     });
   }
 
-  // Android — chooser/intent
+  /* ======= ANDROID ======= */
   function setupAndroid(){
-    androidPanel.classList.remove("hidden");
-    btnAND.addEventListener("click", function(e){
+    document.getElementById("androidPanel").classList.remove("hidden");
+    document.getElementById("btnAND").addEventListener("click", function(e){
       e.preventDefault();
-      // paket yazmırıq ki, istifadəçiyə “WhatsApp / WhatsApp Business” seçimi çıxsın
+      // chooser çıxsın deyə paket yazmırıq
       location.href = `intent://chat.whatsapp.com/${CODE}#Intent;scheme=https;end`;
-      // ehtiyat addımlar
-      setTimeout(()=>{ location.href = CHAT; }, 1200);
+      // ehtiyat keçidlər:
+      setTimeout(()=>{ location.href = CHAT;   }, 800);
+      setTimeout(()=>{ location.href = ACCEPT; }, 1600);
     });
   }
 
-  // Digər platformalar
+  /* ======= DİGƏR ======= */
   function setupOther(){
-    otherPanel.classList.remove("hidden");
-    btnOTHER.addEventListener("click", function(e){
+    document.getElementById("otherPanel").classList.remove("hidden");
+    document.getElementById("btnOTHER").addEventListener("click", function(e){
       e.preventDefault();
-      fallbackToChat(true);
+      location.href = CHAT;
     });
   }
 
-  // Başlat
-  const iosPanel     = document.getElementById("iosPanel");
-  const androidPanel = document.getElementById("androidPanel");
-  const otherPanel   = document.getElementById("otherPanel");
-  const btnWAB    = document.getElementById("btnWAB");
-  const btnWA     = document.getElementById("btnWA");
-  const btnAND    = document.getElementById("btnAND");
-  const btnOTHER  = document.getElementById("btnOTHER");
-
-  if (isIOS)        setupIOS();
-  else if (isAndroid) setupAndroid();
-  else              setupOther();
+  /* ======= BAŞLAT ======= */
+  (function init(){
+    if (isIOS)         setupIOS();
+    else if (isAndroid) setupAndroid();
+    else               setupOther();
+  })();
 </script>
 </body>
 </html>
