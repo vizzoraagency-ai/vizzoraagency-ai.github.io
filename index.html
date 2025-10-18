@@ -1,105 +1,139 @@
 <!doctype html>
 <html lang="az">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WhatsApp qrupuna qoşul</title>
-
-  <meta name="format-detection" content="telephone=no">
-  <style>
-    :root { --green:#25D366; --text:#111; }
-    html,body{margin:0;padding:0;background:#f6f7f8;color:var(--text);
-      font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;}
-    .wrap{min-height:100svh;display:grid;place-items:center;padding:24px;}
-    .card{max-width:620px;width:100%;background:#fff;border-radius:16px;
-      box-shadow:0 6px 24px rgba(0,0,0,.06);padding:28px 24px;text-align:center}
-    h1{margin:.2rem 0 1rem;font-size:clamp(22px,4.5vw,30px)}
-    p{margin:.6rem 0 0.9rem;line-height:1.6}
-    .btn{display:inline-block;border:0;border-radius:999px;padding:14px 24px;
-      font-weight:700;background:var(--green);color:#fff;text-decoration:none;font-size:18px}
-    .hint{font-size:14px;color:#666}
-    .hidden{display:none}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WhatsApp qrupuna qoşul</title>
+<meta name="format-detection" content="telephone=no">
+<style>
+  :root { --green:#25D366; --text:#111; }
+  html,body{margin:0;padding:0;background:#f6f7f8;color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{min-height:100svh;display:grid;place-items:center;padding:24px}
+  .card{max-width:640px;width:100%;background:#fff;border-radius:16px;
+    box-shadow:0 6px 24px rgba(0,0,0,.06);padding:28px 24px;text-align:center}
+  h1{margin:.2rem 0 1rem;font-size:clamp(22px,4.5vw,30px)}
+  p{margin:.6rem 0 .9rem;line-height:1.6}
+  .btn{display:inline-block;border:0;border-radius:999px;padding:14px 22px;
+    font-weight:700;background:var(--green);color:#fff;text-decoration:none;font-size:18px}
+  .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .ghost{background:#eef3ee;color:#0b0b0b}
+  .hint{font-size:14px;color:#666}
+  .hidden{display:none}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>WhatsApp qrupuna qoşulursunuz…</h1>
-      <p>2 saniyə ərzində avtomatik yönləndiriləcəksiniz.</p>
-      <p class="hint">Əgər yönləndirmə <b>baş vermirsə</b>, aşağıdakı düyməyə klik edin.</p>
-      <p><a id="joinBtn" class="btn" href="#">Qrupa qoşul</a></p>
-      <p id="iosHint" class="hint hidden">
-        TikTok/Instagram içində açılsa və pəncərə görsənsə: <b>… → Tarayıcıda aç</b> seçin,
-        sonra <b>“WhatsApp ilə aç”</b> və ya <b>“WhatsApp Business ilə aç”</b> düyməsini seçin.
-      </p>
+<div class="wrap">
+  <div class="card">
+    <h1>WhatsApp qrupuna qoşulursunuz…</h1>
+    <p>2 saniyə ərzində avtomatik yönləndiriləcəksiniz.</p>
+    <p class="hint">Əgər yönləndirmə <b>baş vermirsə</b>, aşağıdakı düymələrdən istifadə edin.</p>
+
+    <p><a id="joinAuto" class="btn" href="#">Qrupa qoşul</a></p>
+
+    <!-- iOS üçün manuel seçimlər -->
+    <div id="iosManual" class="hidden">
+      <p class="hint"><b>Tövsiyə:</b> əvvəlcə <i>Safari ilə aç</i> — dəvət pəncərəsi ən stabil burda gəlir.</p>
+      <div class="row">
+        <a id="openSafari" class="btn ghost" href="#" rel="noopener">Safari ilə aç</a>
+        <a id="openWA" class="btn ghost" href="#">WhatsApp ilə aç</a>
+        <a id="openWAB" class="btn ghost" href="#">WhatsApp Business ilə aç</a>
+      </div>
+      <p class="hint">Hər iki WhatsApp quraşdırılıbsa, istədiyini seç.</p>
     </div>
   </div>
+</div>
 
 <script>
-  // ======= SABİTLƏR =======
-  const INVITE_CODE  = "BNpKYIFxThjGWEYJV0EALR";
-  const CHAT_LINK    = `https://chat.whatsapp.com/${INVITE_CODE}`;
-  const ACCEPT_API   = `https://api.whatsapp.com/accept?code=${INVITE_CODE}`;
-  const ACCEPT_WA_ME = `https://wa.me/accept/${INVITE_CODE}`;
+  // ===== Sabitlər =====
+  const INVITE   = "BNpKYIFxThjGWEYJV0EALR";
+  const CHAT     = `https://chat.whatsapp.com/${INVITE}`;
+  const ACCEPT   = `https://api.whatsapp.com/accept?code=${INVITE}`;
+  const ACCEPT2  = `https://wa.me/accept/${INVITE}`;
 
-  // ======= KÖMƏKÇİ FUNKSİYALAR =======
-  const ua = navigator.userAgent || navigator.vendor || window.opera;
-  const isAndroid = /Android/i.test(ua);
-  const isIOS     = /iPhone|iPad|iPod/i.test(ua);
+  // ===== UA =====
+  const UA = navigator.userAgent || navigator.vendor || window.opera;
+  const isAndroid = /Android/i.test(UA);
+  const isIOS     = /iPhone|iPad|iPod/i.test(UA);
+  const isInApp   = /tiktok|instagram|fbav|fb_iab/i.test(UA);
 
-  function isInApp(){
-    const l = ua.toLowerCase();
-    return l.includes("tiktok") || l.includes("instagram") || l.includes("fbav") ||
-           l.includes("fb_iab")  || l.includes("line/")     || l.includes("mail");
+  // ===== Köməkçilər =====
+  function openURL(u, target) {
+    try { window.open(u, target || "_self", "noopener,noreferrer"); }
+    catch(_) { location.href = u; }
   }
 
-  // ======= ANDROID =======
-  function openAndroid(){
-    location.href = `intent://chat.whatsapp.com/${INVITE_CODE}#Intent;scheme=https;end`;
-    setTimeout(()=>{ location.href = ACCEPT_API; }, 800);
-    setTimeout(()=>{ location.href = CHAT_LINK;   }, 1600);
+  function openScheme(scheme) { // istifadəçi klikində çağır
+    try{
+      const f = document.createElement("iframe");
+      f.style.display = "none"; f.src = scheme;
+      document.body.appendChild(f);
+      setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 900);
+    }catch(_){}
   }
 
-  // ======= iOS (Safari prioritet) =======
-  function openIOS(){
-    let w = window.open(ACCEPT_API, "_blank", "noopener,noreferrer");
-    if(!w){ location.href = ACCEPT_API; }
-    setTimeout(()=>{ location.href = ACCEPT_WA_ME; }, 900);
-    setTimeout(()=>{ location.href = CHAT_LINK;    }, 1800);
-    setTimeout(()=>{
-      try{
-        const f = document.createElement("iframe");
-        f.style.display = "none";
-        f.src = "whatsapp://";
-        document.body.appendChild(f);
-        setTimeout(()=>{ try{ document.body.removeChild(f); }catch(_){} }, 800);
-      }catch(_){}
-    }, 2500);
+  // ===== Android axını =====
+  function goAndroid(){
+    // chooser gəlsin deyə paket yazmırıq — user Business/adi seçə bilir
+    location.href = `intent://chat.whatsapp.com/${INVITE}#Intent;scheme=https;end`;
+    setTimeout(()=>openURL(ACCEPT), 800);
+    setTimeout(()=>openURL(CHAT),   1600);
   }
 
-  // ======= DESKTOP / DİGƏR =======
-  function openGeneric(){ location.href = CHAT_LINK; }
-
-  // ======= STARTER =======
-  function openWhatsApp(){
-    if(isAndroid){ openAndroid(); }
-    else if(isIOS){ 
-      document.getElementById('iosHint').classList.remove('hidden');
-      openIOS();
+  // ===== iOS axını =====
+  function goIOSAuto(){
+    // In-app-dirsə Safari-yə at: universal link ən yaxşı orada işləyir
+    if (isInApp) {
+      openURL(ACCEPT, "_blank");
+    } else {
+      openURL(ACCEPT, "_self");
     }
-    else{ openGeneric(); }
+    // Fallback qatları
+    setTimeout(()=>openURL(ACCEPT2), 900);
+    setTimeout(()=>openURL(CHAT),    1800);
+
+    // 2,3 s sonra hələ açılmayıbsa, iOS üçün manuel seçimləri göstər
+    setTimeout(()=>document.getElementById("iosManual").classList.remove("hidden"), 2300);
   }
 
-  document.getElementById('joinBtn').addEventListener('click', function(e){
-    e.preventDefault();
-    openWhatsApp();
+  // iOS manuel düymələri
+  function bindIOSManual(){
+    const safari = document.getElementById("openSafari");
+    const wa     = document.getElementById("openWA");
+    const wab    = document.getElementById("openWAB");
+
+    safari.addEventListener("click", (e)=>{
+      e.preventDefault();
+      openURL(ACCEPT, "_blank"); // birbaşa Safari/tab
+    });
+
+    wa.addEventListener("click", (e)=>{
+      e.preventDefault();
+      // əvvəl app-ı oyat, sonra accept linkinə qayıt
+      openScheme("whatsapp://");
+      setTimeout(()=>openURL(ACCEPT), 700);
+    });
+
+    wab.addEventListener("click", (e)=>{
+      e.preventDefault();
+      openScheme("whatsapp-business://");
+      setTimeout(()=>openURL(ACCEPT), 700);
+    });
+  }
+
+  // ===== Başlat =====
+  function start(){
+    if (isAndroid) goAndroid();
+    else if (isIOS) { goIOSAuto(); bindIOSManual(); }
+    else openURL(CHAT);
+  }
+
+  document.getElementById("joinAuto").addEventListener("click", (e)=>{
+    e.preventDefault(); start();
   });
 
-  window.addEventListener('load', ()=>{ setTimeout(openWhatsApp, 500); });
-
-  if(isInApp() && isIOS){
-    document.getElementById('iosHint').classList.remove('hidden');
-  }
+  // Avtomatik cəhd (yarım saniyə sonra)
+  window.addEventListener("load", ()=>setTimeout(start, 500));
 </script>
 </body>
 </html>
