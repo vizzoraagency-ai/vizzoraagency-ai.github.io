@@ -10,17 +10,24 @@
   html,body{margin:0;padding:0;background:#f6f7f8;color:var(--text);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
   .wrap{min-height:100svh;display:grid;place-items:center;padding:24px}
-  .card{max-width:640px;width:100%;background:#fff;border-radius:16px;
+  .card{max-width:680px;width:100%;background:#fff;border-radius:16px;
     box-shadow:0 6px 24px rgba(0,0,0,.06);padding:28px 24px;text-align:center}
   h1{margin:.2rem 0 1rem;font-size:clamp(22px,4.5vw,30px)}
   p{margin:.6rem 0 .9rem;line-height:1.6}
   .row{display:flex;gap:12px;flex-direction:column;align-items:center}
   .btn{display:inline-block;border:0;border-radius:12px;padding:14px 22px;
-    font-weight:700;text-decoration:none;font-size:18px;width:100%;max-width:420px;cursor:pointer}
+    font-weight:700;text-decoration:none;font-size:18px;width:100%;max-width:440px;cursor:pointer}
   .btn-primary{background:var(--green);color:#fff}
   .btn-outline{background:#eef3ee;color:#0b0b0b}
   .hint{font-size:13px;color:#666;margin-top:8px}
   .hidden{display:none}
+
+  /* Plan B paneli (QR) */
+  .panel{margin-top:18px;padding:16px;border:1px dashed #cdd4cd;border-radius:12px;background:#f9fbf9}
+  .qr{width:200px;height:200px;border-radius:8px}
+  .minirow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+  .btn-sm{padding:10px 14px;border-radius:10px;font-size:15px}
+  code{background:#f1f3f5;padding:2px 6px;border-radius:6px}
 </style>
 </head>
 <body>
@@ -35,6 +42,18 @@
         <a id="btnIOS_WAB" class="btn btn-primary"  href="#">WhatsApp <b>Business</b> ilə aç</a>
         <a id="btnIOS_WA"  class="btn btn-outline" href="#">Adi WhatsApp ilə aç</a>
       </div>
+
+      <!-- Plan B: QR + Copy (yalnız lazım olanda görünəcək) -->
+      <div id="planB" class="panel hidden">
+        <p><b>Alınmadı?</b> Qrup linkini <b>QR ilə</b> skan edib qoşul:</p>
+        <img id="qrImg" class="qr" alt="QR">
+        <div class="minirow">
+          <button id="copyBtn" class="btn btn-outline btn-sm">Linki kopyala</button>
+          <a id="openChatBtn" class="btn btn-outline btn-sm" href="#" target="_blank" rel="noopener">Brauzerdə aç</a>
+        </div>
+        <p class="hint">WhatsApp Business → <b>Parametrlər</b> → <b>QR</b> (və ya Kamera) ilə bu QR-i oxut.</p>
+      </div>
+
       <p class="hint">Qeyd: iOS bəzən default tətbiqi seçir. Bu düymələrdə sərt fallback aktivdir.</p>
     </div>
 
@@ -53,10 +72,10 @@
 
 <script>
   /* ==== DƏVƏT KODU ==== */
-  const CODE = "BNpKYIFxThjGWEYJV0EALR";  // lazım olsa yalnız bunu dəyiş
+  const CODE = "BNpKYIFxThjGWEYJV0EALR";   // yalnız bunu dəyişmək lazım ola bilər
 
   /* ==== Linklər ==== */
-  const CHAT   = `https://chat.whatsapp.com/${CODE}`;        // universal qrup linki
+  const CHAT   = `https://chat.whatsapp.com/${CODE}`;        // universal qrup linki (QR üçün də istifadə)
   const DL_WA  = `whatsapp://accept?code=${CODE}`;            // Adi WhatsApp deep-link
   const DL_WAB = `whatsapp-business://accept?code=${CODE}`;   // Business deep-link
 
@@ -65,42 +84,74 @@
   const isAndroid = /Android/i.test(UA);
   const isIOS     = /iPhone|iPad|iPod/i.test(UA);
 
+  function show(el){ el.classList.remove("hidden"); }
+  function hide(el){ el.classList.add("hidden"); }
+
   function openNew(u){
     try { window.open(u, "_blank", "noopener,noreferrer"); }
     catch(_) { location.href = u; }
   }
 
-  /* ==== iOS: Business yalnız Business-a; Adi → ağıllı fallback ==== */
-  function setupIOS(){
-    document.getElementById("iosPanel").classList.remove("hidden");
+  // Plan B: QR və Copy panelini göstər
+  function openPlanB(){
+    const panel = document.getElementById("planB");
+    if (panel.classList.contains("hidden")) {
+      // QR hazırlığı (externalsiz sadə xidmət)
+      const qrURL = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(CHAT);
+      document.getElementById("qrImg").src = qrURL;
+      document.getElementById("openChatBtn").href = CHAT;
+      show(panel);
+    }
+  }
 
-    // --- WhatsApp Business: yalnız business deep-link ---
+  // Linki kopyalama
+  (function setupCopy(){
+    const btn = document.getElementById("copyBtn");
+    if (!btn) return;
+    btn.addEventListener("click", async function(){
+      try{
+        await navigator.clipboard.writeText(CHAT);
+        btn.innerText = "Kopyalandı ✔";
+        setTimeout(()=>{ btn.innerText = "Linki kopyala"; }, 1500);
+      }catch(_){
+        // köhnə iOS brauzerləri üçün ehtiyat
+        const ta = document.createElement("textarea");
+        ta.value = CHAT; document.body.appendChild(ta); ta.select();
+        try{ document.execCommand("copy"); btn.innerText="Kopyalandı ✔"; }catch(__){}
+        document.body.removeChild(ta);
+        setTimeout(()=>{ btn.innerText = "Linki kopyala"; }, 1500);
+      }
+    });
+  })();
+
+  /* ==== iOS: Business yalnız Business-a; Adi → ağıllı fallback + Plan B ==== */
+  function setupIOS(){
+    show(document.getElementById("iosPanel"));
+
+    // --- WhatsApp Business: yalnız business deep-link (aqressiv) ---
     document.getElementById("btnIOS_WAB").addEventListener("click", function(e){
       e.preventDefault();
 
-      // 1) birbaşa Business deep-link (user-gesture içində)
+      // 1) birbaşa Business deep-link
       location.replace(DL_WAB);
 
-      // 2) əlavə “oyatma” – iframe trik (bəzi iOS versiyalarında daha stabil)
+      // 2) əlavə “oyatma” – iframe trik
       setTimeout(function(){
         try{
           const f=document.createElement("iframe");
-          f.style.display="none";
-          f.src = DL_WAB;
+          f.style.display="none"; f.src = DL_WAB;
           document.body.appendChild(f);
           setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 800);
         }catch(_){}
-      }, 300);
+      }, 250);
 
-      // 3) hələ də bu səhifədəsənsə – son ehtiyat: universal link
+      // 3) 1200 ms sonra hələ bu səhifədəsənsə Plan B (QR) aç
       setTimeout(function(){
-        if (document.hidden === false) {
-          location.href = CHAT;
-        }
-      }, 1600);
+        if (document.hidden === false) { openPlanB(); }
+      }, 1200);
     });
 
-    // --- Adi WhatsApp: əvvəl Adi; alınmasa Business; sonda universal ---
+    // --- Adi WhatsApp: əvvəl Adi; alınmasa Business; sonda universal; sonda Plan B ---
     document.getElementById("btnIOS_WA").addEventListener("click", function(e){
       e.preventDefault();
 
@@ -111,12 +162,11 @@
       setTimeout(function(){
         try{
           const f=document.createElement("iframe");
-          f.style.display="none";
-          f.src = DL_WA;
+          f.style.display="none"; f.src = DL_WA;
           document.body.appendChild(f);
           setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 800);
         }catch(_){}
-      }, 300);
+      }, 250);
 
       // 3) 900 ms içində hələ bu səhifədəsənsə → Business-a keç
       setTimeout(function(){
@@ -125,18 +175,23 @@
         }
       }, 900);
 
-      // 4) son ehtiyat – universal link
+      // 4) 1500 ms sonra hələ də burdasan → universal link (bəzən Safari-yə çıxarır)
       setTimeout(function(){
         if (document.hidden === false) {
-          location.href = CHAT;
+          openNew(CHAT);
         }
-      }, 1800);
+      }, 1500);
+
+      // 5) 2200 ms sonra hələ də burdasan → Plan B (QR)
+      setTimeout(function(){
+        if (document.hidden === false) { openPlanB(); }
+      }, 2200);
     });
   }
 
   /* ==== Android ==== */
   function setupAndroid(){
-    document.getElementById("androidPanel").classList.remove("hidden");
+    show(document.getElementById("androidPanel"));
     document.getElementById("btnAND").addEventListener("click", function(e){
       e.preventDefault();
       // chooser üçün paket yazmırıq – sistem seçim göstərsin
@@ -147,7 +202,7 @@
 
   /* ==== Digərləri ==== */
   function setupOther(){
-    document.getElementById("otherPanel").classList.remove("hidden");
+    show(document.getElementById("otherPanel"));
     document.getElementById("btnOTHER").addEventListener("click", function(e){
       e.preventDefault();
       location.href = CHAT;
