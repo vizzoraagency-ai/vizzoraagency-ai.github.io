@@ -32,7 +32,7 @@
       <a id="btnWAB" class="btn btn-primary"  href="#">WhatsApp <b>Business</b> ilə aç</a>
       <a id="btnWA"  class="btn btn-outline" href="#">Adi WhatsApp ilə aç</a>
     </div>
-    <p class="hint">Android-də əvvəlki kimi işləyir; iOS-da webview məhdudiyyətlərini keçmək üçün universal link → deep-link ardıcıllığı istifadə olunur.</p>
+    <p class="hint">Android əvvəlki kimi işləyir; iOS-da yönləndirmələr eyni tabda ard-arda edilir.</p>
   </div>
 </div>
 
@@ -41,57 +41,47 @@
   const CODE = "BNpKYIFxThjGWEYJV0EALR";
 
   /* ==== Linklər ==== */
-  const CHAT   = `https://chat.whatsapp.com/${CODE}`;      // universal qrup linki
-  const DL_WA  = `whatsapp://accept?code=${CODE}`;          // Adi WhatsApp deep-link (iOS)
-  const DL_WAB = `whatsapp-business://accept?code=${CODE}`; // Business deep-link (iOS)
+  const CHAT        = `https://chat.whatsapp.com/${CODE}`;      // universal qrup linki
+  const ACCEPT_WA   = `https://wa.me/accept/${CODE}`;            // alternativ qəbul linki (stabil)
+  const DL_WA       = `whatsapp://accept?code=${CODE}`;          // Adi WhatsApp deep-link (iOS)
+  const DL_WAB      = `whatsapp-business://accept?code=${CODE}`; // Business deep-link (iOS)
 
   /* ==== Detektorlar ==== */
   const UA = navigator.userAgent || navigator.vendor || window.opera;
   const isAndroid = /Android/i.test(UA);
   const isIOS     = /iPhone|iPad|iPod/i.test(UA);
 
-  function openNew(u){ try{ window.open(u, "_blank", "noopener,noreferrer"); }catch(_){ location.href=u; } }
-
-  /* ---------- ANDROID (DEYİŞMİR) ---------- */
+  /* ---------- ANDROID (dəyişmir – chooser) ---------- */
   function openAndroidWA(){
-    // chooser çıxsın deyə paket YOX — səndə belə işləyirdi
     location.href = `intent://chat.whatsapp.com/${CODE}#Intent;scheme=https;end`;
     setTimeout(()=>{ location.href = CHAT; }, 800);
   }
   function openAndroidWAB(){
-    // eyni məntiq — chooser göstərir, istifadəçi Business-i seçir
     location.href = `intent://chat.whatsapp.com/${CODE}#Intent;scheme=https;end`;
     setTimeout(()=>{ location.href = CHAT; }, 800);
   }
 
-  /* ---------- iOS ---------- */
-  // Adi WhatsApp: əvvəl universal linki yeni tabda aç → sonra deep-link → sonda universal link
+  /* ---------- iOS: Eyni tabda ardıcıl yönləndirmələr ---------- */
   function openIOSWA(){
-    openNew(CHAT);                        // 1) webview-dan çıxmağa kömək (Safari pənc.)
-    setTimeout(()=>{ location.href = DL_WA; }, 400);  // 2) Adi WA deep-link
-    setTimeout(()=>{ if(!document.hidden) location.href = CHAT; }, 1300); // 3) ehtiyat
+    // 1) universal link (webview-dan çıxmaq + dəvət)
+    location.href = CHAT;
+    // 2) qısa sonra adi WhatsApp deep-link (əgər adi WA həqiqətən istifadədədirsə, tutacaq)
+    setTimeout(()=>{ location.href = DL_WA; }, 400);
+    // 3) alınmasa stabil accept endpoint
+    setTimeout(()=>{ if(!document.hidden) location.href = ACCEPT_WA; }, 1000);
+    // 4) ən sonda yenə universal link
+    setTimeout(()=>{ if(!document.hidden) location.href = CHAT; }, 1600);
   }
 
-  // Business: yalnız Business deep-link → alınmazsa universal linki Safari-də aç → sonra yenə Business
   function openIOSWAB(){
-    // 1) Birbaşa Business deep-link (user gesture)
+    // 1) birbaşa Business deep-link
     location.href = DL_WAB;
-
-    // 2) “oyatma” – iframe cəhdi (bəzi iOS versiyaları üçün)
-    setTimeout(()=>{
-      try{
-        const f=document.createElement("iframe");
-        f.style.display="none"; f.src = DL_WAB;
-        document.body.appendChild(f);
-        setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 700);
-      }catch(_){}
-    }, 250);
-
-    // 3) 900 ms sonra hələ bu səhifədəsənsə → universal linki Safari-də aç
-    setTimeout(()=>{ if(!document.hidden) openNew(CHAT); }, 900);
-
-    // 4) 1600 ms sonra yenidən Business deep-link (artıq Safari-dəsə işləyəcək)
-    setTimeout(()=>{ if(!document.hidden) location.href = DL_WAB; }, 1600);
+    // 2) alınmasa accept endpoint
+    setTimeout(()=>{ if(!document.hidden) location.href = ACCEPT_WA; }, 700);
+    // 3) sonra universal link
+    setTimeout(()=>{ if(!document.hidden) location.href = CHAT; }, 1400);
+    // 4) sonda yenə Business deep-link (artıq Safari-dəsə tutacaq)
+    setTimeout(()=>{ if(!document.hidden) location.href = DL_WAB; }, 2000);
   }
 
   /* ---------- DESKTOP / DİGƏR ---------- */
