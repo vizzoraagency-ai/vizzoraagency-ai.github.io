@@ -29,21 +29,23 @@
     <h1>WhatsApp qrupuna qoşul</h1>
     <p id="intro">Platformanı seç və düyməni bas.</p>
 
-    <!-- iPhone/iPad -->
+    <!-- iOS üçün iki seçim -->
     <div id="iosPanel" class="hidden">
       <div class="row">
-        <a id="btnIOS" class="btn btn-primary" href="#">Safari-də aç</a>
-        <p class="hint">Qeyd: iOS-da hansı tətbiqin (WhatsApp/Business) açılmasına sistemi qərar verir.</p>
+        <a id="btnWAB" class="btn btn-primary"  href="#">WhatsApp <b>Business</b> ilə aç</a>
+        <a id="btnWA"  class="btn btn-outline" href="#">Adi WhatsApp ilə aç</a>
+        <a id="btnSafari" class="btn btn-outline" href="#">Safari-də aç (ehtiyat)</a>
       </div>
+      <p class="hint">Qeyd: iOS-da avtomatik seçim olmur, hansını istəyirsənsə seç.</p>
     </div>
 
-    <!-- Android -->
+    <!-- Android üçün bir düymə (chooser özü çıxır) -->
     <div id="androidPanel" class="hidden">
       <a id="btnAND" class="btn btn-primary" href="#">Qrupa qoşul (Android)</a>
-      <p class="hint">Telefonundakı WhatsApp/Business üçün seçim pəncərəsi görünəcək.</p>
+      <p class="hint">Telefonundakı WhatsApp(lar) üçün sistem özü seçim verir.</p>
     </div>
 
-    <!-- Desktop və digərləri -->
+    <!-- Digər platformalar -->
     <div id="otherPanel" class="hidden">
       <a id="btnOTHER" class="btn btn-primary" href="#">Qrupa qoşul</a>
     </div>
@@ -51,32 +53,64 @@
 </div>
 
 <script>
-  // Dəvət kodun
+  // ===== DƏVƏT KODUN =====
   const CODE   = "BNpKYIFxThjGWEYJV0EALR";
-  const ACCEPT = `https://api.whatsapp.com/accept?code=${CODE}`;
-  const CHAT   = `https://chat.whatsapp.com/${CODE}`;
+  const CHAT   = `https://chat.whatsapp.com/${CODE}`;            // rəsmi qrup linki
+  const ACCEPT = `https://api.whatsapp.com/accept?code=${CODE}`; // rəsmi "accept" səhifəsi
+
+  // Deep-linklər (yalnız kliklə işləyir)
+  const DL_WAB = `whatsapp://accept?code=${CODE}`;               // iOS Business / Android də işləyir
+  // Adi WhatsApp üçün universal linkdən istifadə edirik:
+  const DL_WA  = CHAT;                                           // iOS-da standart WhatsApp-a üstünlük verir
 
   const UA = navigator.userAgent || navigator.vendor || window.opera;
   const isAndroid = /Android/i.test(UA);
   const isIOS     = /iPhone|iPad|iPod/i.test(UA);
 
-  // --- iOS: Yalnız istifadəçi klikilə Safari aç ---
+  function openUrl(u, target){
+    try { window.open(u, target || "_self", "noopener,noreferrer"); }
+    catch(_) { location.href = u; }
+  }
+
+  // --- iOS paneli ---
   function setupIOS(){
     iosPanel.classList.remove("hidden");
-    btnIOS.addEventListener("click", function(e){
+
+    // Business
+    btnWAB.addEventListener("click", function(e){
       e.preventDefault();
-      // _blank → Safari (in-app webview-dan çıxartmaq üçün)
-      try{ window.open(ACCEPT, "_blank", "noopener,noreferrer"); }
-      catch(_){ location.href = ACCEPT; }
+      // 1) Business deep-link
+      try{
+        const f=document.createElement("iframe");
+        f.style.display="none"; f.src = DL_WAB;
+        document.body.appendChild(f);
+        setTimeout(()=>{ try{ document.body.removeChild(f);}catch(_){ } }, 900);
+      }catch(_){}
+      // 2) Ehtiyat: 700 ms sonra rəsmi accept
+      setTimeout(()=>openUrl(ACCEPT, "_self"), 700);
+    });
+
+    // Adi WhatsApp (universal link)
+    btnWA.addEventListener("click", function(e){
+      e.preventDefault();
+      openUrl(DL_WA, "_self"); // chat.whatsapp.com/CODE
+    });
+
+    // Safari-də aç (universal)
+    btnSafari.addEventListener("click", function(e){
+      e.preventDefault();
+      openUrl(CHAT, "_blank"); // Safari pəncərəsi
     });
   }
 
-  // --- Android: intent → accept → chat ---
+  // --- Android paneli ---
   function setupAndroid(){
     androidPanel.classList.remove("hidden");
     btnAND.addEventListener("click", function(e){
       e.preventDefault();
+      // chooser çıxsın deyə paket yazmırıq
       location.href = `intent://chat.whatsapp.com/${CODE}#Intent;scheme=https;end`;
+      // ehtiyat
       setTimeout(()=>{ location.href = ACCEPT; }, 800);
       setTimeout(()=>{ location.href = CHAT;   }, 1600);
     });
@@ -87,24 +121,23 @@
     otherPanel.classList.remove("hidden");
     btnOTHER.addEventListener("click", function(e){
       e.preventDefault();
-      location.href = CHAT;
+      openUrl(CHAT, "_self");
     });
   }
 
-  // element qısa adları
-  const iosPanel = document.getElementById("iosPanel");
+  // --- Başlat ---
+  const iosPanel     = document.getElementById("iosPanel");
   const androidPanel = document.getElementById("androidPanel");
-  const otherPanel = document.getElementById("otherPanel");
-  const btnIOS = document.getElementById("btnIOS");
-  const btnAND = document.getElementById("btnAND");
-  const btnOTHER = document.getElementById("btnOTHER");
+  const otherPanel   = document.getElementById("otherPanel");
+  const btnWAB    = document.getElementById("btnWAB");
+  const btnWA     = document.getElementById("btnWA");
+  const btnSafari = document.getElementById("btnSafari");
+  const btnAND    = document.getElementById("btnAND");
+  const btnOTHER  = document.getElementById("btnOTHER");
 
-  // Başlat – heç bir avtomatik yönləndirmə YOXDUR
-  (function init(){
-    if (isIOS) setupIOS();
-    else if (isAndroid) setupAndroid();
-    else setupOther();
-  })();
+  if (isIOS)        setupIOS();
+  else if (isAndroid) setupAndroid();
+  else              setupOther();
 </script>
 </body>
 </html>
