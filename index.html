@@ -35,7 +35,7 @@
         <a id="btnIOS_WAB" class="btn btn-primary"  href="#">WhatsApp <b>Business</b> ilə aç</a>
         <a id="btnIOS_WA"  class="btn btn-outline" href="#">Adi WhatsApp ilə aç</a>
       </div>
-      <p class="hint">Əgər TikTok/Instagram içindən açılıbsa, yenə də işləməlidir; alınmazsa linki Safari-də açıb yenidən bu düyməni basın.</p>
+      <p class="hint">Qeyd: TikTok/Instagram içindən açılsa da işləyəcək. Alınmasa linki yenidən açıb düyməni basın.</p>
     </div>
 
     <!-- Android -->
@@ -52,11 +52,11 @@
 </div>
 
 <script>
-  /* ==== DƏVƏT KODUNU DƏYİŞDİRƏ BİLƏRSƏN ==== */
+  /* ==== DƏVƏT KODU ==== */
   const CODE = "BNpKYIFxThjGWEYJV0EALR";
 
   /* ==== Linklər ==== */
-  const CHAT   = `https://chat.whatsapp.com/${CODE}`;        // universal qrup linki (404 vermir)
+  const CHAT   = `https://chat.whatsapp.com/${CODE}`;        // universal qrup linki
   const DL_WA  = `whatsapp://accept?code=${CODE}`;            // Adi WhatsApp deep-link
   const DL_WAB = `whatsapp-business://accept?code=${CODE}`;   // Business deep-link
 
@@ -70,7 +70,7 @@
     catch(_) { location.href = u; }
   }
 
-  /* ==== iOS: yalnız iki düymə, Safari yoxdur ==== */
+  /* ==== iOS: yalnız iki düymə, Safari düyməsi yoxdur ==== */
   function setupIOS(){
     document.getElementById("iosPanel").classList.remove("hidden");
 
@@ -79,7 +79,7 @@
       e.preventDefault();
       // 1) universal linki yeni tabda aç – webview-dan çıxmağa kömək edir
       openNew(CHAT);
-      // 2) 600 ms sonra deep-link
+      // 2) 600 ms sonra Business deep-link
       setTimeout(function(){ location.href = DL_WAB; }, 600);
       // 3) ehtiyat – eyni tabda universal link
       setTimeout(function(){ location.href = CHAT;   }, 1500);
