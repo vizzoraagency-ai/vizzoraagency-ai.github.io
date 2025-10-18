@@ -35,7 +35,7 @@
         <a id="btnIOS_WAB" class="btn btn-primary"  href="#">WhatsApp <b>Business</b> ilə aç</a>
         <a id="btnIOS_WA"  class="btn btn-outline" href="#">Adi WhatsApp ilə aç</a>
       </div>
-      <p class="hint">Qeyd: TikTok/Instagram içindən açılsa da işləyəcək. Alınmasa linki yenidən açıb düyməni basın.</p>
+      <p class="hint">Qeyd: iOS bəzən universal linki adi WhatsApp-a verir. Bu variantlarda fallback-lar aktivdir.</p>
     </div>
 
     <!-- Android -->
@@ -70,34 +70,44 @@
     catch(_) { location.href = u; }
   }
 
-  /* ==== iOS: yalnız iki düymə (intelligent fallback-lı) ==== */
+  /* ==== iOS: aqressiv klik məntiqi (Business/Adi) ==== */
   function setupIOS(){
     document.getElementById("iosPanel").classList.remove("hidden");
 
-    // Business – əvvəl universal linki yeni tabda aç, sonra deep-link, sonda ehtiyat
+    // --- Business: əvvəl birbaşa deep-link, sonra fallback-lar ---
     document.getElementById("btnIOS_WAB").addEventListener("click", function(e){
       e.preventDefault();
-      openNew(CHAT);
-      setTimeout(function(){ location.href = DL_WAB; }, 600);
-      setTimeout(function(){ location.href = CHAT;   }, 1500);
+      // 1) birbaşa Business deep-link (user gesture içində)
+      location.href = DL_WAB;
+
+      // 2) 500 ms sonra universal link (əgər webview-dəsənsə Safari-yə çıxarsın)
+      setTimeout(function(){ openNew(CHAT); }, 500);
+
+      // 3) 1200 ms sonra yenə Business cəhdi (Safari-də olsan artıq işləyəcək)
+      setTimeout(function(){ location.href = DL_WAB; }, 1200);
+
+      // 4) son ehtiyat
+      setTimeout(function(){ location.href = CHAT; }, 2000);
     });
 
-    // Adi WhatsApp – intelligent fallback:
-    // Adi WA cavab verməzsə 0.8s sonra Business-a keç, sonda universal link
+    // --- Adi: ağıllı fallback — alınmazsa Business-a zorla keç ---
     document.getElementById("btnIOS_WA").addEventListener("click", function(e){
       e.preventDefault();
-      openNew(CHAT);             // webview-dan çıxmağa kömək edir
-      location.href = DL_WA;     // 1) Adi WhatsApp cəhdi
+      // 1) birbaşa Adi deep-link
+      location.href = DL_WA;
 
-      setTimeout(function(){     // 2) 800 ms içində cavab yoxdursa Business-ə keç
-        if (document.hidden === false) { // hələ bu səhifə aktivdirsə, deməli açılmayıb
+      // 2) 800 ms içində səhifə hələ görünürsə → Business-a keç
+      setTimeout(function(){
+        if (document.hidden === false) {
           location.href = DL_WAB;
         }
       }, 800);
 
-      setTimeout(function(){     // 3) ehtiyat – universal link
-        location.href = CHAT;
-      }, 1600);
+      // 3) 1200 ms sonra universal link (Safari-yə çıxış)
+      setTimeout(function(){ openNew(CHAT); }, 1200);
+
+      // 4) son ehtiyat
+      setTimeout(function(){ location.href = CHAT; }, 2000);
     });
   }
 
