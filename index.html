@@ -53,13 +53,13 @@
 
 <script>
   /* ==== DƏVƏT KODU ==== */
-  const CODE = "BNpKYIFxThjGWEYJV0EALR";   // lazım olsa yalnız bunu dəyiş
+  const CODE = "BNpKYIFxThjGWEYJV0EALR";   // yalnız bunu dəyişmək lazım ola bilər
 
   /* ==== Linklər ==== */
-  const CHAT   = `https://chat.whatsapp.com/${CODE}`;        // universal qrup linki (ən sonda ehtiyat)
+  const CHAT   = `https://chat.whatsapp.com/${CODE}`;        // universal qrup linki (ehtiyat)
   const DL_WA  = `whatsapp://accept?code=${CODE}`;            // Adi WhatsApp deep-link
   const DL_WAB = `whatsapp-business://accept?code=${CODE}`;   // Business deep-link
-  const APPSTORE_WAB = "itms-apps://itunes.apple.com/app/id1386412985"; // WhatsApp Business (iOS) App Store
+  const APPSTORE_WAB = "itms-apps://itunes.apple.com/app/id1386412985"; // WA Business App Store (iOS)
 
   /* ==== Detektorlar ==== */
   const UA = navigator.userAgent || navigator.vendor || window.opera;
@@ -75,11 +75,11 @@
   function setupIOS(){
     document.getElementById("iosPanel").classList.remove("hidden");
 
-    // --- WhatsApp Business: yalnız Business deep-link (aqressiv), universal link YOX ---
+    // --- WhatsApp Business: YALNIZ Business deep-link (aqressiv), universal link YOX ---
     document.getElementById("btnIOS_WAB").addEventListener("click", function(e){
       e.preventDefault();
 
-      // 1) birbaşa Business deep-link (user gesture)
+      // 1) birbaşa Business deep-link
       location.replace(DL_WAB);
 
       // 2) əlavə “oyatma” – iframe cəhdi
@@ -93,10 +93,10 @@
         }catch(_){}
       }, 250);
 
-      // 3) 1200 ms sonra hələ bu səhifədəsənsə — deməli açılmadı → App Store (istəməsən bu sətri sil)
+      // 3) 1200 ms sonra hələ bu səhifədəsənsə → App Store (Business yoxdur deməkdir)
       setTimeout(function(){
         if (document.hidden === false) {
-          location.href = APPSTORE_WAB; // WhatsApp Business quraşdırmaq üçün
+          location.href = APPSTORE_WAB;
         }
       }, 1200);
     });
@@ -105,7 +105,7 @@
     document.getElementById("btnIOS_WA").addEventListener("click", function(e){
       e.preventDefault();
 
-      // 1) birbaşa Adi deep-link
+      // 1) birbaşa Adi deep-link (user-gesture içində)
       location.replace(DL_WA);
 
       // 2) “oyatma” – iframe ilə ikinci cəhd
@@ -126,7 +126,7 @@
         }
       }, 900);
 
-      // 4) 1800 ms sonra hələ də buradəsənsə → universal link (dəvət səhifəsi)
+      // 4) 1800 ms sonra hələ də burdasan → universal link (dəvət səhifəsi)
       setTimeout(function(){
         if (document.hidden === false) {
           openNew(CHAT);
